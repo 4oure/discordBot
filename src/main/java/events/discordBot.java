@@ -5,13 +5,14 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import org.jetbrains.annotations.NotNull;
-
 import javax.security.auth.login.LoginException;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -24,22 +25,25 @@ public class discordBot extends ListenerAdapter {
 		Scanner in = new Scanner(new FileReader("/Users/gavin/IdeaProjects/discordBot/src/main/java/events/token.txt"));
 		StringBuilder sb = new StringBuilder();
 		final String token = getToken(in, sb);
-		JDA jda = JDABuilder.createLight(token)
+		JDA jda = JDABuilder
+				.createLight(token)
 				.addEventListeners(new discordBot())
-			//	.addEventListeners(new readyEventListener())
+				.addEventListeners(new readyEventListener())
 				.setActivity(Activity.playing("hi"))
 				.build();
 
 		jda.upsertCommand("slash-cmd", "This is a slash command").setGuildOnly(true).queue();
 		// set this to false when ready to production
-
+		CommandListUpdateAction commands = jda.updateCommands();
 		// adds ping command
-		jda.updateCommands().addCommands(Commands.slash("ping", "calculate ping of the bot")
-						, Commands.slash("ban", "bans a user from the server")
-						.setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.BAN_MEMBERS))
-						.setGuildOnly(true)
-						.addOption(OptionType.USER, "user", "The user to ban", true).addOption(OptionType.STRING, "reason", "The reason for ban")).queue();
-		jda.updateCommands().addCommands(Commands.slash("timer", "sets a timer for the desired minutes input"));
+		commands
+				.addCommands(Commands.slash("ping", "calculate ping of the bot")
+				.setGuildOnly(true)
+				.setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MANAGE_SERVER)))
+				.queue();
+		commands
+				.addCommands(Commands.slash("timer", "sets a timer for the desired minutes input"))
+				.queue();
 	}
 
 	@NotNull
@@ -48,11 +52,10 @@ public class discordBot extends ListenerAdapter {
 			sb.append(in.next());
 		}
 		in.close();
-		final String token = sb.toString();
-		return token;
+		return sb.toString();
 	}
 
-	public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+	public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
 	//	event.deferReply().queue();
 		switch (event.getName()) {
 			case "ping" -> {
@@ -60,7 +63,7 @@ public class discordBot extends ListenerAdapter {
 				ping(event, time);
 				System.out.println("Received ping command");
 			}// Ephemeral = only user can see
-			case "ban" -> { // apparently it is a good idea to double check permmissions as discord can be unreliable
+			case "ban" -> { // apparently it is a good idea to double-check permissions as discord can be unreliable
 				if (!Objects.requireNonNull(event.getMember()).hasPermission(Permission.BAN_MEMBERS)) {
 					event.reply("Insufficient Permissions")
 							.setEphemeral(true)
@@ -78,9 +81,6 @@ public class discordBot extends ListenerAdapter {
 
 			}
 		}
-		// this shows user that code works, bot is "thinking"
-		//
-		//
 
 
 	}
@@ -89,22 +89,22 @@ public class discordBot extends ListenerAdapter {
 		event.reply("Pong!")
 				.setEphemeral(true)
 				.flatMap(v -> event.getHook()
-						.editOriginalFormat("Pong: %d ms", System.currentTimeMillis() - time))
+				.editOriginalFormat("Pong: %d ms", System.currentTimeMillis() - time))
 				.queue();
 	}
 
-//	public void onMessageReceived(MessageReceivedEvent event)
-//	{
-//		if (event.isFromType(ChannelType.PRIVATE))
-//		{
-//			System.out.printf("[PM] %s: %s\n", event.getAuthor().getName(),
-//					event.getMessage().getContentDisplay());
-//		}
-//		else
-//		{
-//			System.out.printf("[%s][%s] %s: %s\n", event.getGuild().getName(),
-//					event.getTextChannel().getName(), event.getMember().getEffectiveName(),
-//					event.getMessage().getContentDisplay());
-//		}
-//	}
+	public void onMessageReceived(MessageReceivedEvent event)
+	{
+		if (event.isFromType(ChannelType.PRIVATE))
+		{
+			System.out.printf("[PM] %s: %s\n", event.getAuthor().getName(),
+					event.getMessage().getContentDisplay());
+		}
+		else
+		{
+			System.out.printf("[%s][%s] %s: %s\n", event.getGuild().getName(),
+					event.getChannel().getName(), Objects.requireNonNull(event.getMember()).getEffectiveName(),
+					event.getMessage().getContentDisplay());
+		}
+	}
 }

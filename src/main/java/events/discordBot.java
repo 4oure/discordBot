@@ -10,9 +10,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Objects;
@@ -23,12 +23,8 @@ public class discordBot extends ListenerAdapter {
 	public static void main(String[] args) throws LoginException, FileNotFoundException {
 		Scanner in = new Scanner(new FileReader("/Users/gavin/IdeaProjects/discordBot/src/main/java/events/token.txt"));
 		StringBuilder sb = new StringBuilder();
-		while(in.hasNext()){
-			sb.append(in.next());
-		}
-		in.close();
-		 final String  token = sb.toString();
-		JDA jda = (JDA) JDABuilder.createLight(token)
+		final String token = getToken(in, sb);
+		JDA jda = JDABuilder.createLight(token)
 				.addEventListeners(new discordBot())
 			//	.addEventListeners(new readyEventListener())
 				.setActivity(Activity.playing("hi"))
@@ -44,6 +40,16 @@ public class discordBot extends ListenerAdapter {
 						.setGuildOnly(true)
 						.addOption(OptionType.USER, "user", "The user to ban", true).addOption(OptionType.STRING, "reason", "The reason for ban")).queue();
 		jda.updateCommands().addCommands(Commands.slash("timer", "sets a timer for the desired minutes input"));
+	}
+
+	@NotNull
+	private static String getToken(Scanner in, StringBuilder sb) {
+		while(in.hasNext()){
+			sb.append(in.next());
+		}
+		in.close();
+		final String token = sb.toString();
+		return token;
 	}
 
 	public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -64,7 +70,7 @@ public class discordBot extends ListenerAdapter {
 				assert member != null;
 				if (!event.getMember().canInteract(member)) {
 					event.reply("You can not ban this user").setEphemeral(true).queue();
-					break;
+
 
 				}
 			}

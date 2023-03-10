@@ -4,21 +4,27 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import org.jetbrains.annotations.NotNull;
 import javax.security.auth.login.LoginException;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 public class discordBot extends ListenerAdapter {
 
@@ -27,6 +33,7 @@ public class discordBot extends ListenerAdapter {
 		StringBuilder sb = new StringBuilder();
 		final String token = getToken(in, sb);
 		JDA jda = create(token);
+
 
 		jda.upsertCommand("slash-cmd", "This is a slash command").setGuildOnly(true).queue();
 		// set this to false when ready to production
@@ -49,6 +56,7 @@ public class discordBot extends ListenerAdapter {
 				.addEventListeners(new discordBot())
 				.addEventListeners(new readyEventListener())
 				.setActivity(Activity.playing("hi"))
+				.enableIntents(GatewayIntent.MESSAGE_CONTENT)
 				.build();
 	}
 
@@ -106,18 +114,30 @@ public class discordBot extends ListenerAdapter {
 				.queue();
 	}
 
-	public void onMessageReceived(MessageReceivedEvent event)
-	{
-		if (event.isFromType(ChannelType.PRIVATE))
-		{
+	public void onMessageReceived(MessageReceivedEvent event) {
+		ArrayList<String> naughtyWords = new ArrayList<>();
+		naughtyWords.add("Fart");
+		if (event.isFromType(ChannelType.PRIVATE)) {
 			System.out.printf("[PM] %s: %s\n", event.getAuthor().getName(),
 					event.getMessage().getContentDisplay());
 		}
-		else
-		{
+		else {
 			System.out.printf("[%s][%s] %s: %s\n", event.getGuild().getName(),
 					event.getChannel().getName(), Objects.requireNonNull(event.getMember()).getEffectiveName(),
 					event.getMessage().getContentDisplay());
 		}
+		for (String naughtyWord : naughtyWords){
+			if (event.getMessage().getContentDisplay().equalsIgnoreCase(naughtyWord)){
+				User userToBan = event.getAuthor();
+				Guild guild = event.getGuild();
+				try {
+					guild.ban(userToBan, 0, TimeUnit.SECONDS).reason("Banned for violating chat rules.").queue();
+				} catch(HierarchyException h){
+					System.out.println("User is an admin or owner, permissions insufficient");
+			}
+			}
+		}
+
+
 	}
 }

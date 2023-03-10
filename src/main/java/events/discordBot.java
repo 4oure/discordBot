@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,7 @@ public class discordBot extends ListenerAdapter {
 				.setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MANAGE_SERVER)))
 				.queue();
 		commands
-				.addCommands(Commands.slash("timer", "sets a timer for the desired minutes input"))
+				.addCommands(Commands.slash("timer", "sets a timer for the desired minutes input").addOption(OptionType.INTEGER, "minutes", "how many minutes the timer will be set for", true))
 				.queue();
 	}
 
@@ -83,17 +84,14 @@ public class discordBot extends ListenerAdapter {
 
 				}
 			}
-			case "timer"->{
-				int minutes = Integer.parseInt(Objects.requireNonNull(event.getOption("minutes")).getAsString());
-				try{
-					Thread.sleep((long) minutes *60*1000);
-					event.reply("Timer complete!")
-							.setEphemeral(true).queue();
-
-				} catch(InterruptedException e){
-					e.printStackTrace();
+			case "timer" -> {
+				int minutes = (int) Objects.requireNonNull(event.getOption("minutes")).getAsLong();
+				if(minutes == 1){
+					event.reply("Timer set for 1 minute!").queue();
+				} else {
+					event.reply("Timer set for " + minutes + " minutes!").queue();
 				}
-
+				new Thread(new Alarm(event, minutes, event.getChannel())).start();
 			}
 		}
 

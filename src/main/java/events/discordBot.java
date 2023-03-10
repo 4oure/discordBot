@@ -25,12 +25,7 @@ public class discordBot extends ListenerAdapter {
 		Scanner in = new Scanner(new FileReader("/Users/gavin/IdeaProjects/discordBot/src/main/java/events/token.txt"));
 		StringBuilder sb = new StringBuilder();
 		final String token = getToken(in, sb);
-		JDA jda = JDABuilder
-				.createLight(token)
-				.addEventListeners(new discordBot())
-				.addEventListeners(new readyEventListener())
-				.setActivity(Activity.playing("hi"))
-				.build();
+		JDA jda = create(token);
 
 		jda.upsertCommand("slash-cmd", "This is a slash command").setGuildOnly(true).queue();
 		// set this to false when ready to production
@@ -44,6 +39,16 @@ public class discordBot extends ListenerAdapter {
 		commands
 				.addCommands(Commands.slash("timer", "sets a timer for the desired minutes input"))
 				.queue();
+	}
+
+	@NotNull
+	private static JDA create(String token) {
+		return JDABuilder
+				.createLight(token)
+				.addEventListeners(new discordBot())
+				.addEventListeners(new readyEventListener())
+				.setActivity(Activity.playing("hi"))
+				.build();
 	}
 
 	@NotNull
@@ -72,12 +77,22 @@ public class discordBot extends ListenerAdapter {
 				Member member = (Member) event.getOption("user");
 				assert member != null;
 				if (!event.getMember().canInteract(member)) {
-					event.reply("You can not ban this user").setEphemeral(true).queue();
+					event.reply("You can not ban this user").setEphemeral(true)
+					.queue();
 
 
 				}
 			}
 			case "timer"->{
+				int minutes = Integer.parseInt(Objects.requireNonNull(event.getOption("minutes")).getAsString());
+				try{
+					Thread.sleep((long) minutes *60*1000);
+					event.reply("Timer complete!")
+							.setEphemeral(true).queue();
+
+				} catch(InterruptedException e){
+					e.printStackTrace();
+				}
 
 			}
 		}

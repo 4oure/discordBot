@@ -1,5 +1,4 @@
 package events;
-
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
@@ -33,7 +32,6 @@ public class discordBot extends ListenerAdapter {
 		StringBuilder sb = new StringBuilder();
 		final String token = getToken(in, sb);
 		JDA jda = create(token);
-
 
 		jda.upsertCommand("slash-cmd", "This is a slash command").setGuildOnly(true).queue();
 		// set this to false when ready to production
@@ -88,8 +86,6 @@ public class discordBot extends ListenerAdapter {
 				if (!event.getMember().canInteract(member)) {
 					event.reply("You can not ban this user").setEphemeral(true)
 					.queue();
-
-
 				}
 			}
 			case "timer" -> {
@@ -102,8 +98,6 @@ public class discordBot extends ListenerAdapter {
 				new Thread(new Alarm(event, minutes, event.getChannel())).start();
 			}
 		}
-
-
 	}
 
 	private static void ping(SlashCommandInteractionEvent event, long time) {
@@ -127,10 +121,11 @@ public class discordBot extends ListenerAdapter {
 					event.getMessage().getContentDisplay());
 		}
 		for (String naughtyWord : naughtyWords){
-			if (event.getMessage().getContentDisplay().equalsIgnoreCase(naughtyWord)){
+		String word =	naughtyWord.toLowerCase();
+			if (event.getMessage().getContentDisplay().toLowerCase().contains(word)){
 				User userToBan = event.getAuthor();
 				Guild guild = event.getGuild();
-				try {
+					try {
 					guild.ban(userToBan, 0, TimeUnit.SECONDS).reason("Banned for violating chat rules.").queue();
 				} catch(HierarchyException h){
 					System.out.println("User is an admin or owner, permissions insufficient");

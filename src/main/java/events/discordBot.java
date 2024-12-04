@@ -34,7 +34,7 @@ public class discordBot extends ListenerAdapter {
 		JDA jda = create(token);
 
 		jda.upsertCommand("slash-cmd", "This is a slash command").setGuildOnly(true).queue();
-		// set this to false when ready to production
+		// set this to false when ready for production
 		CommandListUpdateAction commands = jda.updateCommands();
 		// adds ping command
 		commands
